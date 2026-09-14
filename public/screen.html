@@ -15,58 +15,39 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",Arial,
 .title{font-size:36px;font-weight:900;color:white}
 .session{font-size:18px;color:#8899aa;font-weight:700;letter-spacing:3px}
 .panel{background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;flex:1;overflow:auto}
-
-/* Lobby */
 .teams{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.team{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;text-align:center;color:white;transition:transform .2s}
-.team:hover{transform:scale(1.02)}
+.team{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;text-align:center;color:white}
 .team-name{font-size:20px;font-weight:700;color:var(--c)}
 .team b{font-size:36px;display:block;margin:4px 0}
 .team small{font-size:14px;color:#8899aa}
 .total-bar{display:flex;justify-content:center;align-items:center;gap:30px;margin-top:16px;color:white;font-size:20px}
 .total-bar b{font-size:28px;color:var(--c)}
-
-/* Round */
 .round-header{text-align:center;margin-bottom:16px}
 .pill{display:inline-block;padding:6px 16px;border-radius:999px;background:rgba(19,181,215,.15);color:var(--c);font-weight:800;font-size:16px}
 .value-name{font-size:42px;font-weight:900;color:white;margin:10px 0}
-.pair{display:flex;justify-content:space-between;font-size:22px;font-weight:800;color:#8899aa;max-width:800px;margin:0 auto}
+.axis-bar{display:flex;justify-content:space-between;align-items:center;max-width:800px;margin:8px auto;color:#8899aa;font-size:18px;font-weight:700}
+.axis-bar .num{color:var(--c);font-size:22px;font-weight:900;min-width:40px;text-align:center}
 .clue{font-size:36px;font-weight:900;text-align:center;background:rgba(19,181,215,.1);border:1px solid rgba(19,181,215,.2);border-radius:16px;padding:20px;margin:16px auto;color:white;max-width:800px}
 .status{text-align:center;font-size:22px;color:var(--c);margin:12px 0;font-weight:700}
-
-/* Spectrum visualization */
 .spectrum{max-width:800px;margin:16px auto;position:relative}
 .spectrum-bar{height:16px;border-radius:8px;background:linear-gradient(90deg,var(--b),var(--c),var(--g));position:relative}
-.target-marker{position:absolute;top:-8px;width:4px;height:32px;background:#ff6b6b;border-radius:2px;transform:translateX(-50%);transition:left .5s}
+.target-marker{position:absolute;top:-8px;width:4px;height:32px;background:#ff6b6b;border-radius:2px;transform:translateX(-50%)}
 .target-label{position:absolute;top:-32px;transform:translateX(-50%);color:#ff6b6b;font-weight:900;font-size:16px}
-
-/* Results table */
 .results{width:100%;border-collapse:collapse;font-size:20px;color:white}
 .results td,.results th{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
 .results th{color:#8899aa;font-weight:600;font-size:16px}
 .results th:first-child,.results td:first-child{text-align:left}
-.results td:first-child{font-weight:900;font-size:22px}
 .results tr:nth-child(1) td{color:#ffd700}
 .results tr:nth-child(2) td{color:#c0c0c0}
 .results tr:nth-child(3) td{color:#cd7f32}
 .rank-medal{font-size:24px}
-
-/* Debrief */
-.debrief{margin-top:16px;padding:20px;background:rgba(255,255,255,.04);border-radius:16px}
-.debrief h3{color:var(--c);margin:0 0 12px;font-size:22px}
-.debrief li{color:white;font-size:20px;margin:10px 0;line-height:1.5}
-
-/* Scoreboard */
 .scoreboard{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:12px}
-.score-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;text-align:center;color:white;position:relative}
+.score-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;text-align:center;color:white}
 .score-card.gold{border-color:#ffd700;background:rgba(255,215,0,.08)}
 .score-rank{font-size:14px;color:#8899aa;font-weight:700}
 .score-name{font-size:18px;font-weight:800;margin:4px 0;color:var(--c)}
 .score-pts{font-size:30px;font-weight:900}
-
 .hidden{display:none}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .4s ease-out}
 </style>
 </head>
 <body>
@@ -88,7 +69,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",Arial,
       <div class="round-header">
         <span id="group" class="pill"></span>
         <div id="value" class="value-name"></div>
-        <div class="pair"><span id="left"></span><span id="right"></span></div>
+        <div class="axis-bar">
+          <span class="num">0</span>
+          <span id="left"></span>
+          <span style="color:#556;font-size:14px">← 스펙트럼 →</span>
+          <span id="right"></span>
+          <span class="num">100</span>
+        </div>
       </div>
       <div id="clue" class="clue hidden"></div>
       <div id="statusLine" class="status"></div>
@@ -97,8 +84,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",Arial,
           <div id="targetMarker" class="target-marker"><span id="targetLabel" class="target-label"></span></div>
         </div>
       </div>
-      <div id="result" class="fade-in"></div>
-      <div id="debrief"></div>
+      <div id="result"></div>
     </div>
   </div>
 </div>
@@ -122,10 +108,8 @@ function apply(s){
     const n=connected.filter(p=>p.team===t).length;
     return `<div class="team"><div class="team-name">${t}</div><b>${n}</b><small>누적 ${s.teamScores[t]||0}점</small></div>`;
   }).join("");
-
   show("lobby",s.phase==="lobby"||!s.currentRound);
   show("round",s.phase!=="lobby"&&!!s.currentRound);
-
   if(s.currentRound){
     $("group").textContent=s.currentRound.group;
     $("value").textContent=s.currentRound.value;
@@ -133,10 +117,9 @@ function apply(s){
     $("right").textContent=s.currentRound.right;
     show("clue",!!s.clue); $("clue").textContent=s.clue?`"${s.clue}"`:"";
     $("statusLine").textContent=
-      s.phase==="clue"?"🎤 Clue Giver가 힌트를 준비하고 있습니다...":
-      s.phase==="voting"?`📊 투표 진행 중 · ${s.voteCount}명 참여`:
-      "";
-    if(s.phase!=="revealed"){$("result").innerHTML="";$("debrief").innerHTML="";show("spectrumViz",false)}
+      s.phase==="clue"?"🎤 진행자가 힌트를 준비하고 있습니다...":
+      s.phase==="voting"?`📊 투표 진행 중 · ${s.voteCount}명 참여`:"";
+    if(s.phase!=="revealed"){$("result").innerHTML="";show("spectrumViz",false)}
   }
   renderScoreboard(s);
 }
@@ -145,7 +128,6 @@ function renderResult(r){
   show("spectrumViz",true);
   $("targetMarker").style.left=r.target+"%";
   $("targetLabel").textContent="Target "+r.target;
-
   const rows=[...r.teamResults].sort((a,b)=>(a.distance??999)-(b.distance??999));
   const medals=["🥇","🥈","🥉"];
   $("result").innerHTML=`
@@ -162,7 +144,6 @@ function renderResult(r){
       </tr>`).join("")}
     </table>`;
   $("statusLine").textContent="";
-  $("debrief").innerHTML=`<div class="debrief"><h3>💬 Debrief</h3><ol>${r.round.debrief.map(x=>`<li>${x}</li>`).join("")}</ol></div>`;
 }
 
 function renderScoreboard(s){
