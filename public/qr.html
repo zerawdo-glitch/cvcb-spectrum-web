@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>조별 QR 코드</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",Arial,sans-serif;margin:0;padding:20px;color:#17212b;background:#f5f7f9}
+.head{text-align:center;margin-bottom:24px}
+.head h1{font-size:24px;margin:0 0 6px}
+.head p{color:#687787;font-size:14px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;max-width:1100px;margin:0 auto}
+.card{text-align:center;border:1px solid #dbe3ea;border-radius:16px;padding:16px;background:white;break-inside:avoid;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card img{width:160px;max-width:100%;display:block;margin:0 auto 8px}
+.team{font-size:22px;font-weight:900;color:#0667ad;margin:4px 0}
+.code{font-size:11px;color:#687787}
+.btn{display:inline-block;padding:10px 24px;background:#13b5d7;color:white;border:0;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media print{.btn,.head p{display:none}body{background:white;padding:10px}.grid{grid-template-columns:repeat(2,1fr);gap:10px}.card{page-break-inside:avoid;box-shadow:none;border:1px solid #ccc}.card img{width:140px}}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>CV/CB Spectrum · 조별 입장 QR</h1>
+  <p>각 조 테이블에 해당 QR을 인쇄하여 배치해 주세요.</p>
+  <button class="btn" onclick="print()">🖨 인쇄하기</button>
+</div>
+<div id="grid" class="grid"></div>
+<script>
+const q=new URLSearchParams(location.search),code=(q.get("code")||"").toUpperCase();
+const teams=Array.from({length:10},(_,i)=>`${i+1}조`);
+const base=location.origin;
+document.getElementById("grid").innerHTML=teams.map(team=>{
+  const u=`${base}/?code=${encodeURIComponent(code)}&team=${encodeURIComponent(team)}`;
+  return `<div class="card"><img src="/api/qr?data=${encodeURIComponent(u)}"><div class="team">${team}</div><div class="code">코드: ${code}</div></div>`;
+}).join("");
+</script>
+</body>
+</html>
