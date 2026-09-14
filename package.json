@@ -1,0 +1,18 @@
+{
+  "name": "cvcb-spectrum-web",
+  "version": "4.0.0",
+  "private": true,
+  "description": "CV/CB Wavelength-style realtime workshop web app for 55 participants / 10 teams",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1",
+    "qrcode": "^1.5.4"
+  }
+}
