@@ -18,7 +18,7 @@ input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5df;border-ra
 textarea{resize:vertical;min-height:60px}
 button{border:0;border-radius:10px;padding:14px 18px;font-weight:800;font-size:15px;cursor:pointer;width:100%;transition:opacity .15s}
 button:active{opacity:.7}
-.primary{background:var(--cyan);color:white}.secondary{background:#edf2f5;color:var(--ink)}.green{background:var(--green);color:white}.danger{background:#e74c3c;color:white}
+.primary{background:var(--cyan);color:white}.secondary{background:#edf2f5;color:var(--ink)}.green{background:var(--green);color:white}
 .hidden{display:none!important}
 .pill{display:inline-block;background:#edf9fc;color:#0789a4;padding:5px 10px;border-radius:999px;font-weight:800;font-size:12px}
 .code{font-size:36px;font-weight:900;letter-spacing:5px;text-align:center;margin:8px 0}
@@ -34,14 +34,20 @@ button:active{opacity:.7}
 .round-btn.active{border-color:var(--cyan);background:#f0fbfe}
 .round-btn.done{opacity:.5;border-color:#ccc}
 .clue-box{font-size:20px;font-weight:900;text-align:center;background:#eefbfe;border-radius:12px;padding:16px;margin:12px 0}
-.axis{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--muted);margin-top:6px}
+.spectrum-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:2px}
+.spectrum-label b{font-size:13px;color:var(--ink)}
+.axis{background:#f0f4f8;border-radius:10px;padding:10px 14px;margin-top:8px}
+.axis-row{display:flex;justify-content:space-between;align-items:center;margin:2px 0}
+.axis-num{font-weight:900;font-size:16px;color:var(--cyan);min-width:30px;text-align:center}
+.axis-text{font-size:13px;font-weight:700;flex:1}
+.axis-text.right{text-align:right}
 .slider-wrap{margin:20px 0 8px;text-align:center}
 .slider-wrap input[type=range]{width:100%;height:44px;cursor:pointer;accent-color:var(--cyan)}
 .slider-val{font-size:42px;font-weight:900;color:var(--cyan)}
 .resultTable{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
 .resultTable th,.resultTable td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}
 .resultTable th:first-child,.resultTable td:first-child{text-align:left}
-.resultTable tr:first-child td,.gold{color:#d4a017;font-weight:900}
+.resultTable tr:first-child td{color:#d4a017;font-weight:900}
 .qrHint{padding:12px;border-radius:10px;background:#f0f8f0;font-size:13px;margin-bottom:10px}
 .nameOnly{max-width:400px;margin:40px auto}
 .err{color:#e74c3c;font-size:13px;margin-top:6px}
@@ -52,11 +58,18 @@ button:active{opacity:.7}
 .vote-done .check{font-size:48px;color:var(--green)}
 .host-wide{max-width:1100px}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.btn-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
 .scoreboard{margin-top:12px}
 .score-row{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .score-rank{width:28px;font-weight:900;font-size:16px;color:var(--cyan)}
 .score-team{flex:1;font-weight:700;font-size:15px}
 .score-pts{font-weight:900;font-size:18px}
+.final-tabs{display:flex;gap:0;margin-bottom:14px}
+.final-tab{flex:1;padding:12px;text-align:center;font-weight:800;font-size:15px;border:2px solid var(--line);cursor:pointer;background:#f9fbfc}
+.final-tab:first-child{border-radius:10px 0 0 10px}
+.final-tab:last-child{border-radius:0 10px 10px 0}
+.final-tab.active{background:var(--cyan);color:white;border-color:var(--cyan)}
+.medal{font-size:18px}
 @media(min-width:900px){.wrap.host-wide{max-width:1100px}.rounds-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
@@ -93,7 +106,7 @@ button:active{opacity:.7}
     </div>
   </section>
 
-  <!-- QR JOIN (name only) -->
+  <!-- QR JOIN -->
   <section id="qrJoin" class="card nameOnly hidden">
     <span class="pill" id="qrTeamLabel"></span>
     <h2 style="margin-top:12px">이름만 입력해 주세요</h2>
@@ -125,16 +138,47 @@ button:active{opacity:.7}
     <div id="roundSelect" class="card">
       <h2>라운드 선택</h2>
       <div id="roundButtons" class="rounds-grid"></div>
-      <label>Clue Giver (비워두면 무작위)</label>
-      <select id="giver"></select>
       <button id="startRound" class="primary" style="margin-top:10px">▶ 라운드 시작</button>
+      <button id="showFinal" class="secondary" style="margin-top:8px">🏆 최종 결과 보기</button>
     </div>
 
+    <!-- Host Clue Phase: host enters clue -->
+    <div id="hostCluePhase" class="card hidden">
+      <span id="hcGroup" class="pill"></span>
+      <h2 id="hcValue" style="margin-top:8px"></h2>
+      <div class="axis">
+        <div class="axis-row">
+          <div class="axis-num">0</div>
+          <div class="axis-text" id="hcLeft"></div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-text right" id="hcRight"></div>
+          <div class="axis-num">100</div>
+        </div>
+      </div>
+      <p style="margin:10px 0;font-size:15px;background:#fff8e8;padding:12px;border-radius:10px">
+        🎯 Target: <b id="hcTarget" style="font-size:24px;color:var(--cyan)"></b><br>
+        <span class="sub">숫자를 직접 말하지 말고, 상황·비유로 힌트를 주세요.</span>
+      </p>
+      <textarea id="hostClueInput" placeholder="힌트를 입력하세요" maxlength="140"></textarea>
+      <button id="hostSubmitClue" class="primary" style="margin-top:8px">힌트 공개</button>
+    </div>
+
+    <!-- Host Voting/Reveal Phase -->
     <div id="hostRound" class="card hidden">
       <span id="hgroup" class="pill"></span>
       <h2 id="hvalue" style="margin-top:8px"></h2>
-      <div class="axis"><span id="hleft"></span><span id="hright"></span></div>
-      <p style="margin:8px 0;font-size:13px;color:var(--muted)">🎯 Target: <b id="targetHost"></b> (진행자만 보임)</p>
+      <div class="axis">
+        <div class="axis-row">
+          <div class="axis-num">0</div>
+          <div class="axis-text" id="hleft"></div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-text right" id="hright"></div>
+          <div class="axis-num">100</div>
+        </div>
+      </div>
+      <p style="margin:8px 0;font-size:13px;color:var(--muted)">🎯 Target: <b id="targetHost"></b></p>
       <div id="hostClueBox" class="clue-box hidden"></div>
       <div id="hostVoteStatus" style="font-size:14px;margin:8px 0;color:var(--muted)"></div>
       <div class="btn-row">
@@ -142,10 +186,21 @@ button:active{opacity:.7}
         <button id="back" class="secondary">↩ 라운드 목록</button>
       </div>
       <div id="hostResults" class="hidden" style="margin-top:14px"></div>
-      <div id="debrief" class="hidden" style="margin-top:14px"></div>
     </div>
 
-    <div class="card">
+    <!-- Final Results -->
+    <div id="finalResults" class="card hidden">
+      <h2>🏆 최종 결과</h2>
+      <div class="final-tabs">
+        <div class="final-tab active" id="tabTeam" onclick="showFinalTab('team')">조 순위</div>
+        <div class="final-tab" id="tabIndiv" onclick="showFinalTab('indiv')">개인 순위</div>
+      </div>
+      <div id="finalTeamBody"></div>
+      <div id="finalIndivBody" class="hidden"></div>
+      <button id="backFromFinal" class="secondary" style="margin-top:12px">↩ 라운드 목록으로</button>
+    </div>
+
+    <div id="hostScoreSection" class="card">
       <h2>누적 점수</h2>
       <div id="hostScoreboard" class="scoreboard"></div>
     </div>
@@ -163,28 +218,25 @@ button:active{opacity:.7}
       <p class="sub">진행자가 라운드를 시작하면<br>자동으로 화면이 바뀝니다.</p>
     </div>
 
-    <div id="secret" class="card hidden">
-      <span id="sgroup" class="pill"></span>
-      <h2 style="margin-top:10px">🎤 당신이 Clue Giver입니다!</h2>
-      <h3 id="svalue" style="margin:6px 0"></h3>
-      <div class="axis"><span id="sleft"></span><span id="sright"></span></div>
-      <p style="margin:12px 0;font-size:15px;background:#fff8e8;padding:12px;border-radius:10px">
-        🎯 숨겨진 위치: <b id="starget" style="font-size:24px;color:var(--cyan)"></b><br>
-        <span class="sub">숫자를 직접 말하지 말고, 상황·비유로 힌트를 주세요.</span>
-      </p>
-      <textarea id="clueInput" placeholder="힌트를 입력하세요" maxlength="140"></textarea>
-      <button id="submitClue" class="primary" style="margin-top:8px">힌트 공개</button>
-    </div>
-
     <div id="voteView" class="card hidden">
       <span id="vgroup" class="pill"></span>
       <h2 id="vvalue" style="margin-top:8px"></h2>
       <div class="clue-box" id="vclue"></div>
+      <div class="axis">
+        <div class="axis-row">
+          <div class="axis-num">0</div>
+          <div class="axis-text" id="vleft"></div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-text right" id="vright"></div>
+          <div class="axis-num">100</div>
+        </div>
+      </div>
       <div class="slider-wrap">
         <div id="rangeVal" class="slider-val">50</div>
         <input id="range" type="range" min="0" max="100" value="50" step="1">
       </div>
-      <div class="axis"><span id="vleft"></span><span id="vright"></span></div>
+      <div class="spectrum-label"><b>0</b><span>← 왼쪽에 가까울수록</span><span>오른쪽에 가까울수록 →</span><b>100</b></div>
       <button id="voteBtn" class="green" style="margin-top:14px">이 위치로 투표</button>
       <p id="voteMsg" class="err"></p>
     </div>
@@ -218,15 +270,13 @@ let mode="", code="", pid=localStorage.getItem("cvcb_pid")||"",
 const teams=Array.from({length:10},(_,i)=>`${i+1}조`);
 $("manualTeam").innerHTML=teams.map(t=>`<option>${t}</option>`).join("");
 
-// Connection status
 socket.on("connect",()=>{$("connPill").classList.remove("show");
-  if(mode==="host"&&hostCode&&hostToken) socket.emit("hostResume",{code:hostCode,hostToken},r=>{if(r?.ok)emitState=r.state});
+  if(mode==="host"&&hostCode&&hostToken) socket.emit("hostResume",{code:hostCode,hostToken},()=>{});
   if(mode==="participant"&&code&&pid&&myName&&myTeam) socket.emit("join",{code,name:myName,team:myTeam,participantId:pid},()=>{});
 });
 socket.on("disconnect",()=>$("connPill").classList.add("show"));
 socket.on("connect_error",()=>$("connPill").classList.add("show"));
 
-// QR auto-join
 function queryJoin(){
   const q=new URLSearchParams(location.search),c=(q.get("code")||"").toUpperCase(),t=q.get("team")||"";
   if(c&&teams.includes(t)){
@@ -251,7 +301,6 @@ function join(c,n,t){
 }
 $("manualJoin").onclick=()=>join($("manualCode").value.trim().toUpperCase(),$("manualName").value,$("manualTeam").value);
 
-// Host create
 $("create").onclick=()=>socket.emit("hostCreate",{title:$("title").value},res=>{
   if(!res?.ok)return;
   mode="host"; code=res.code; hostToken=res.hostToken; hostCode=res.code;
@@ -264,16 +313,8 @@ $("create").onclick=()=>socket.emit("hostCreate",{title:$("title").value},res=>{
 $("screenBtn").onclick=()=>window.open(`/screen.html?code=${code}`,"_blank");
 $("qrPageBtn").onclick=()=>window.open(`/qr.html?code=${code}`,"_blank");
 
-// Host state
 socket.on("hostState",s=>{if(mode==="host")applyHost(s)});
 socket.on("state",s=>{if(mode==="participant")applyParticipant(s)});
-socket.on("secret",d=>{
-  if(mode!=="participant")return;
-  show("wait",false);show("voteView",false);show("presult",false);show("voteDone",false);show("secret",true);
-  $("sgroup").textContent=d.round.group;$("svalue").textContent=d.round.value;
-  $("sleft").textContent=d.round.left;$("sright").textContent=d.round.right;$("starget").textContent=d.round.target;
-  $("clueInput").value="";
-});
 socket.on("result",r=>{if(mode==="participant")participantResult(r)});
 
 function applyHost(s){
@@ -285,40 +326,75 @@ function applyHost(s){
     const n=s.participants.filter(p=>p.connected&&p.team===t).length;
     return `<div class="team-cell"><b>${t}</b>${n}명<br><small>${s.teamScores[t]||0}점</small></div>`;
   }).join("");
-  $("giver").innerHTML='<option value="">무작위</option>'+s.participants.filter(p=>p.connected).map(p=>`<option value="${p.id}">${p.name}(${p.team})</option>`).join("");
   const comp=s.completedRounds||[];
   $("roundButtons").innerHTML=s.rounds.map(r=>{
     const done=comp.includes(r.id);
     return `<button class="round-btn ${selectedRound===r.id?'active':''} ${done?'done':''}" data-id="${r.id}"><b>${r.value}</b><small>${r.group}${done?' ✓':''}</small></button>`;
   }).join("");
   document.querySelectorAll(".round-btn").forEach(b=>b.onclick=()=>{selectedRound=b.dataset.id;applyHost(s)});
-  show("roundSelect",s.phase==="lobby"); show("hostRound",s.phase!=="lobby");
-  if(s.currentRound){
+
+  show("roundSelect",s.phase==="lobby");
+  show("hostCluePhase",s.phase==="clue");
+  show("hostRound",s.phase==="voting"||s.phase==="revealed");
+  show("finalResults",false);
+  show("hostScoreSection",s.phase!=="finalView");
+
+  if(s.phase==="clue"&&s.currentRound){
+    $("hcGroup").textContent=s.currentRound.group;
+    $("hcValue").textContent=s.currentRound.value;
+    $("hcLeft").textContent=s.currentRound.left;
+    $("hcRight").textContent=s.currentRound.right;
+    $("hcTarget").textContent=s.currentRound.target;
+  }
+  if(s.currentRound&&(s.phase==="voting"||s.phase==="revealed")){
     $("hgroup").textContent=s.currentRound.group;$("hvalue").textContent=s.currentRound.value;
     $("hleft").textContent=s.currentRound.left;$("hright").textContent=s.currentRound.right;
     $("targetHost").textContent=s.currentRound.target;
     show("hostClueBox",!!s.clue); $("hostClueBox").textContent=s.clue||"";
     show("reveal",s.phase==="voting");
     const total=s.participants.filter(p=>p.connected).length;
-    const giverCount=s.clueGiverId?1:0;
-    $("hostVoteStatus").textContent=s.phase==="voting"?`투표: ${s.voteCount}/${total-giverCount}명`
-      :s.phase==="clue"?"Clue Giver 힌트 입력 대기 중...":"";
-    if(s.phase==="revealed"&&s.lastResult)renderHostResult(s.lastResult);else{show("hostResults",false);show("debrief",false)}
+    $("hostVoteStatus").textContent=s.phase==="voting"?`투표: ${s.voteCount}/${total}명`:"";
+    if(s.phase==="revealed"&&s.lastResult)renderHostResult(s.lastResult);else show("hostResults",false);
   }
   renderScoreboard(s);
 }
 
-$("startRound").onclick=()=>socket.emit("hostStartRound",{code,roundId:selectedRound,clueGiverId:$("giver").value||null},r=>{
-  if(!r?.ok) alert(r?.error||"라운드 시작 실패");
+$("startRound").onclick=()=>socket.emit("hostStartRound",{code,roundId:selectedRound},r=>{
+  if(!r?.ok){alert(r?.error||"라운드 시작 실패");return}
+  $("hostClueInput").value="";
 });
+$("hostSubmitClue").onclick=()=>{
+  socket.emit("hostSubmitClue",{code,clue:$("hostClueInput").value},res=>{
+    if(!res?.ok)alert(res?.error||"힌트 제출 실패");
+  });
+};
 $("reveal").onclick=()=>socket.emit("hostReveal",{code});
 $("back").onclick=()=>socket.emit("hostLobby",{code});
 
+$("showFinal").onclick=()=>{
+  socket.emit("getFinalResults",{code},res=>{
+    if(!res?.ok)return;
+    show("roundSelect",false);show("finalResults",true);show("hostScoreSection",false);
+    const medals=["🥇","🥈","🥉"];
+    $("finalTeamBody").innerHTML=`<p class="sub">${res.roundCount}개 라운드 완료</p><table class="resultTable"><tr><th></th><th>조</th><th>누적 점수</th></tr>${res.teamTotal.map((x,i)=>`<tr><td class="medal">${medals[i]||i+1}</td><td><b>${x.team}</b></td><td><b>${x.score}점</b></td></tr>`).join("")}</table>`;
+    $("finalIndivBody").innerHTML=`<table class="resultTable"><tr><th></th><th>이름</th><th>조</th><th>누적 점수</th></tr>${res.individualTotal.map((x,i)=>`<tr><td class="medal">${medals[i]||i+1}</td><td><b>${x.name}</b></td><td>${x.team}</td><td><b>${x.score}점</b></td></tr>`).join("")}</table>`;
+    showFinalTab('team');
+  });
+};
+$("backFromFinal").onclick=()=>{show("finalResults",false);show("roundSelect",true);show("hostScoreSection",true)};
+
+window.showFinalTab=function(tab){
+  $("tabTeam").classList.toggle("active",tab==="team");
+  $("tabIndiv").classList.toggle("active",tab==="indiv");
+  show("finalTeamBody",tab==="team");
+  show("finalIndivBody",tab==="indiv");
+};
+
 function renderHostResult(r){
-  show("hostResults",true); show("debrief",true);
+  show("hostResults",true);
   const rows=[...r.teamResults].sort((a,b)=>(a.distance??999)-(b.distance??999));
-  $("hostResults").innerHTML=`<h3>Target: ${r.target}</h3><table class="resultTable"><tr><th>순위</th><th>조</th><th>평균</th><th>거리</th><th>+점수</th></tr>${rows.map((x,i)=>`<tr><td>${x.count?i+1:'-'}</td><td><b>${x.team}</b></td><td>${x.avg==null?'-':x.avg.toFixed(1)}</td><td>${x.distance==null?'-':x.distance.toFixed(1)}</td><td><b>+${x.points}</b></td></tr>`).join("")}</table>`;
-  $("debrief").innerHTML=`<h3 style="margin-top:14px">💬 Debrief</h3><ol style="padding-left:20px">${r.round.debrief.map(q=>`<li style="margin:8px 0;font-size:14px">${q}</li>`).join("")}</ol>`;
+  const medals=["🥇","🥈","🥉"];
+  $("hostResults").innerHTML=`<h3>Target: ${r.target}</h3><table class="resultTable"><tr><th></th><th>조</th><th>평균</th><th>거리</th><th>+점수</th></tr>${rows.map((x,i)=>`<tr><td class="medal">${x.count?(medals[i]||i+1):'-'}</td><td><b>${x.team}</b></td><td>${x.avg==null?'-':x.avg.toFixed(1)}</td><td>${x.distance==null?'-':x.distance.toFixed(1)}</td><td><b>+${x.points}</b></td></tr>`).join("")}</table>`;
 }
 
 function renderScoreboard(s){
@@ -331,25 +407,21 @@ function renderScoreboard(s){
 // Participant
 function applyParticipant(s){
   if(s.phase==="lobby"){
-    show("wait",true);show("secret",false);show("voteView",false);show("presult",false);show("voteDone",false);
+    show("wait",true);show("voteView",false);show("presult",false);show("voteDone",false);
     $("wait").innerHTML='<h2>⏳ 잠시 기다려 주세요</h2><p class="sub">진행자가 라운드를 시작하면<br>자동으로 화면이 바뀝니다.</p>';
     voted=false;
   }
-  else if(s.phase==="clue"&&s.clueGiverId!==pid){
-    show("wait",true);show("secret",false);show("voteView",false);show("presult",false);show("voteDone",false);
-    $("wait").innerHTML='<h2>🎤 Clue Giver가 힌트를 준비 중입니다</h2><p class="sub">잠시만 기다려 주세요.</p>';
+  else if(s.phase==="clue"){
+    show("wait",true);show("voteView",false);show("presult",false);show("voteDone",false);
+    $("wait").innerHTML='<h2>🎤 진행자가 힌트를 준비 중입니다</h2><p class="sub">잠시만 기다려 주세요.</p>';
     voted=false;
   }
   else if(s.phase==="voting"){
-    if(s.clueGiverId===pid){
-      show("secret",false);show("voteView",false);show("voteDone",false);show("wait",true);
-      $("wait").innerHTML='<h2>투표 진행 중</h2><p class="sub">다른 참가자들이 투표하고 있습니다.</p>';
-      return;
-    }
-    if(voted){show("voteDone",true);show("voteView",false);return}
-    show("wait",false);show("secret",false);show("presult",false);show("voteDone",false);show("voteView",true);
+    if(voted){show("voteDone",true);show("voteView",false);show("wait",false);return}
+    show("wait",false);show("presult",false);show("voteDone",false);show("voteView",true);
     $("vgroup").textContent=s.currentRound.group;$("vvalue").textContent=s.currentRound.value;
-    $("vclue").textContent=s.clue;$("vleft").textContent=s.currentRound.left;$("vright").textContent=s.currentRound.right;
+    $("vclue").textContent=s.clue;
+    $("vleft").textContent=s.currentRound.left;$("vright").textContent=s.currentRound.right;
     $("voteMsg").textContent=""; $("range").value=50; $("rangeVal").textContent="50";
   }
 }
@@ -361,24 +433,18 @@ $("voteBtn").onclick=()=>{
     else $("voteMsg").textContent=res?.error||"투표 실패";
   });
 };
-$("submitClue").onclick=()=>{
-  socket.emit("submitClue",{code,participantId:pid,clue:$("clueInput").value},res=>{
-    if(!res?.ok)alert(res?.error||"힌트 제출 실패");
-  });
-};
 
 function participantResult(r){
   voted=false;
-  show("wait",false);show("secret",false);show("voteView",false);show("voteDone",false);show("presult",true);
+  show("wait",false);show("voteView",false);show("voteDone",false);show("presult",true);
   const rows=[...r.teamResults].sort((a,b)=>(a.distance??999)-(b.distance??999));
   const mine=r.teamResults.find(x=>x.team===$("pteam").textContent);
+  const medals=["🥇","🥈","🥉"];
   $("presultBody").innerHTML=
     `<div class="clue-box">"${r.clue}"</div>
      <p style="text-align:center;font-size:15px">🎯 Target: <b style="font-size:22px">${r.target}</b></p>
      ${mine?`<p style="text-align:center">우리 조 평균: <b>${mine.avg==null?'-':mine.avg.toFixed(1)}</b> · 이번 점수 <b>+${mine.points}</b></p>`:''}
-     <table class="resultTable"><tr><th>순위</th><th>조</th><th>평균</th><th>+점수</th></tr>${rows.map((x,i)=>`<tr${x.team===$("pteam").textContent?' style="background:#f0fbfe"':''}><td>${x.count?i+1:'-'}</td><td><b>${x.team}</b></td><td>${x.avg==null?'-':x.avg.toFixed(1)}</td><td><b>+${x.points}</b></td></tr>`).join("")}</table>
-     <h3 style="margin-top:14px">💬 함께 생각해 볼 질문</h3>
-     <ol style="padding-left:20px">${r.round.debrief.map(q=>`<li style="margin:8px 0;font-size:14px">${q}</li>`).join("")}</ol>`;
+     <table class="resultTable"><tr><th></th><th>조</th><th>평균</th><th>+점수</th></tr>${rows.map((x,i)=>`<tr${x.team===$("pteam").textContent?' style="background:#f0fbfe"':''}><td class="medal">${x.count?(medals[i]||i+1):'-'}</td><td><b>${x.team}</b></td><td>${x.avg==null?'-':x.avg.toFixed(1)}</td><td><b>+${x.points}</b></td></tr>`).join("")}</table>`;
 }
 
 queryJoin();
