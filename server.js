@@ -180,12 +180,16 @@ io.on("connection", socket => {
     } catch(e) { cb?.({ok:false,error:"라운드 시작 실패"}); }
   });
 
-  // Host submits the clue directly
-  socket.on("hostSubmitClue", ({code,clue}, cb)=>{
+  // Host submits the clue directly, optionally adjusting target
+  socket.on("hostSubmitClue", ({code,clue,target}, cb)=>{
     const s=getSession(code);
     if(!s || s.hostSocketId!==socket.id || s.phase!=="clue")
       return cb?.({ok:false,error:"지금은 힌트를 제출할 수 없습니다."});
     if(!clue?.trim()) return cb?.({ok:false,error:"힌트를 입력해 주세요."});
+    if(target!=null && s.currentRound){
+      const t=Math.max(0,Math.min(100,Math.round(Number(target))));
+      s.currentRound.target=t;
+    }
     s.clue=clue.trim().slice(0,140);
     s.phase="voting";
     cb?.({ok:true});
