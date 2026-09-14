@@ -36,47 +36,17 @@ const DEFAULT_TEAMS = Array.from({ length: 10 }, (_, i) => `${i + 1}조`);
 
 const ROUNDS = [
   { id:"innovation", group:"Core Value", value:"Innovation",
-    left:"검증된 방식 활용", right:"새로운 방식 실험",
-    debrief:[
-      "새로운 시도를 망설이게 만드는 현실적인 요인은 무엇인가요?",
-      "리더가 실패 가능성을 대하는 방식은 팀의 Innovation에 어떤 영향을 주나요?",
-      "우리 업무에서 작게 실험해 볼 수 있는 한 가지는 무엇인가요?"
-    ]},
+    left:"검증된 방식 활용", right:"새로운 방식 실험" },
   { id:"integrity", group:"Core Value", value:"Integrity",
-    left:"상황에 맞춘 유연한 판단", right:"원칙과 기준의 일관성",
-    debrief:[
-      "유연성과 원칙이 충돌할 때 무엇을 기준으로 판단하나요?",
-      "구성원이 리더의 판단 기준을 예측할 수 있다고 느낄까요?",
-      "Integrity를 지키면서 관계도 유지하려면 어떤 행동이 필요할까요?"
-    ]},
+    left:"상황에 맞춘 유연한 판단", right:"원칙과 기준의 일관성" },
   { id:"accountability", group:"Core Value", value:"Accountability",
-    left:"내가 직접 해결", right:"역할을 명확히 하고 맡김",
-    debrief:[
-      "책임감을 느낄수록 내가 직접 해결하려는 경향은 없나요?",
-      "직접 해결과 책임 있는 위임의 경계는 어디인가요?",
-      "Ownership을 높이기 위해 리더가 명확히 해야 할 것은 무엇인가요?"
-    ]},
+    left:"내가 직접 해결", right:"역할을 명확히 하고 맡김" },
   { id:"inclusive", group:"Core Behavior", value:"Be inclusive & Embrace Diversity",
-    left:"빠르게 의견을 모아 결론", right:"다양한 관점을 충분히 탐색",
-    debrief:[
-      "속도를 높이는 과정에서 놓치는 관점은 없었나요?",
-      "발언이 적은 구성원의 의견을 실제로 어떻게 끌어내고 있나요?",
-      "다양한 의견을 들은 뒤 결정할 때 리더가 해야 할 행동은 무엇일까요?"
-    ]},
+    left:"빠르게 의견을 모아 결론", right:"다양한 관점을 충분히 탐색" },
   { id:"trust", group:"Core Behavior", value:"Collaborate & Trust",
-    left:"리더가 세부적으로 개입", right:"구성원에게 자율성 부여",
-    debrief:[
-      "어디까지 맡기는 것이 신뢰이고 어디부터 방임일까요?",
-      "내가 다시 개입하게 되는 Trigger는 무엇인가요?",
-      "위임할 때 기대 결과·권한·체크포인트를 얼마나 명확히 하나요?"
-    ]},
+    left:"리더가 세부적으로 개입", right:"구성원에게 자율성 부여" },
   { id:"develop", group:"Core Behavior", value:"Develop & Grow",
-    left:"답을 직접 제공", right:"질문으로 코칭",
-    debrief:[
-      "언제 답을 주는 것이 필요하고 언제 질문이 더 효과적일까요?",
-      "시간 압박이 커지면 나의 행동은 어느 쪽으로 움직이나요?",
-      "구성원이 스스로 생각할 여지를 얼마나 주고 있나요?"
-    ]}
+    left:"답을 직접 제공", right:"질문으로 코칭" }
 ];
 
 const sessions = new Map();
@@ -111,7 +81,9 @@ function snapshot(s, host=false) {
     teamScores:s.teamScores,
     lastResult:s.lastResult,
     rounds:s.rounds,
-    completedRounds:s.completedRounds||[]
+    completedRounds:s.completedRounds||[],
+    allResults:s.allResults||[],
+    isHostClueGiver:true
   };
 }
 function emitState(s) {
@@ -138,11 +110,12 @@ io.on("connection", socket => {
         rounds:ROUNDS,
         phase:"lobby",
         currentRound:null,
-        clueGiverId:null,
+        clueGiverId:"__HOST__",
         clue:"",
         votes:new Map(),
         lastResult:null,
-        completedRounds:[]
+        completedRounds:[],
+        allResults:[]
       };
       sessions.set(code,s);
       socket.join(code);
@@ -191,7 +164,8 @@ io.on("connection", socket => {
     } catch(e) { cb?.({ok:false,error:"입장 처리 중 오류"}); }
   });
 
-  socket.on("hostStartRound", ({code,roundId,clueGiverId}, cb)=>{
+  // Host is now always the Clue Giver - no participant selection needed
+  socket.on("hostStartRound", ({code,roundId}, cb)=>{
     try {
       const s=getSession(code);
       if(!s || s.hostSocketId!==socket.id) return cb?.({ok:false,error:"Host 권한이 없습니다."});
@@ -199,21 +173,17 @@ io.on("connection", socket => {
       if(!r) return cb?.({ok:false,error:"라운드를 찾을 수 없습니다."});
       const connected=[...s.participants.values()].filter(p=>p.connected);
       if(!connected.length) return cb?.({ok:false,error:"참가자가 없습니다."});
-      const giver = clueGiverId ? s.participants.get(clueGiverId) : connected[Math.floor(Math.random()*connected.length)];
-      if(!giver) return cb?.({ok:false,error:"Clue Giver를 선택할 수 없습니다."});
       s.currentRound={...r,target:Math.floor(Math.random()*81)+10};
-      s.clueGiverId=giver.id; s.clue=""; s.votes.clear(); s.phase="clue"; s.lastResult=null;
-      if(giver.socketId){
-        io.to(giver.socketId).emit("secret",{ round:{...s.currentRound} });
-      }
-      cb?.({ok:true});
+      s.clueGiverId="__HOST__"; s.clue=""; s.votes.clear(); s.phase="clue"; s.lastResult=null;
+      cb?.({ok:true,target:s.currentRound.target});
       emitState(s);
     } catch(e) { cb?.({ok:false,error:"라운드 시작 실패"}); }
   });
 
-  socket.on("submitClue", ({code,participantId,clue}, cb)=>{
+  // Host submits the clue directly
+  socket.on("hostSubmitClue", ({code,clue}, cb)=>{
     const s=getSession(code);
-    if(!s || s.phase!=="clue" || s.clueGiverId!==participantId)
+    if(!s || s.hostSocketId!==socket.id || s.phase!=="clue")
       return cb?.({ok:false,error:"지금은 힌트를 제출할 수 없습니다."});
     if(!clue?.trim()) return cb?.({ok:false,error:"힌트를 입력해 주세요."});
     s.clue=clue.trim().slice(0,140);
@@ -227,7 +197,6 @@ io.on("connection", socket => {
     if(!s || s.phase!=="voting") return cb?.({ok:false,error:"지금은 투표 시간이 아닙니다."});
     const p=s.participants.get(participantId);
     if(!p) return cb?.({ok:false,error:"참가자 정보를 찾을 수 없습니다."});
-    if(p.id===s.clueGiverId) return cb?.({ok:false,error:"Clue Giver는 투표하지 않습니다."});
     const v=Math.max(0,Math.min(100,Number(value)));
     s.votes.set(participantId,v);
     cb?.({ok:true});
@@ -241,7 +210,10 @@ io.on("connection", socket => {
 
       const individual=[...s.votes.entries()].map(([id,value])=>{
         const p=s.participants.get(id);
-        return {id,name:p?.name||"",team:p?.team||"",value};
+        const distance=Math.abs(value-s.currentRound.target);
+        const pts=points(distance);
+        if(p) p.score=(p.score||0)+pts;
+        return {id,name:p?.name||"",team:p?.team||"",value,distance,points:pts};
       });
 
       const teamResults=s.teams.map(team=>{
@@ -263,6 +235,8 @@ io.on("connection", socket => {
       s.phase="revealed";
       if(!s.completedRounds) s.completedRounds=[];
       if(!s.completedRounds.includes(s.currentRound.id)) s.completedRounds.push(s.currentRound.id);
+      if(!s.allResults) s.allResults=[];
+      s.allResults.push(s.lastResult);
       io.to(s.code).emit("result",s.lastResult);
       io.to(`${s.code}:screen`).emit("result",s.lastResult);
       cb?.({ok:true});
@@ -273,15 +247,27 @@ io.on("connection", socket => {
   socket.on("hostLobby", ({code},cb)=>{
     const s=getSession(code);
     if(!s || s.hostSocketId!==socket.id) return cb?.({ok:false});
-    s.phase="lobby"; s.currentRound=null; s.clue=""; s.clueGiverId=null; s.votes.clear();
+    s.phase="lobby"; s.currentRound=null; s.clue=""; s.clueGiverId="__HOST__"; s.votes.clear();
     cb?.({ok:true}); emitState(s);
+  });
+
+  socket.on("getFinalResults", ({code},cb)=>{
+    const s=getSession(code);
+    if(!s) return cb?.({ok:false});
+    const individualTotal=[...s.participants.values()].map(p=>({
+      id:p.id, name:p.name, team:p.team, score:p.score||0
+    })).sort((a,b)=>b.score-a.score);
+    const teamTotal=Object.entries(s.teamScores).map(([team,score])=>({team,score})).sort((a,b)=>b.score-a.score);
+    cb?.({ok:true, individualTotal, teamTotal, roundCount:s.completedRounds?.length||0});
   });
 
   socket.on("hostResetScores", ({code},cb)=>{
     const s=getSession(code);
     if(!s || s.hostSocketId!==socket.id) return cb?.({ok:false});
     s.teams.forEach(t=>s.teamScores[t]=0);
+    s.participants.forEach(p=>p.score=0);
     s.completedRounds=[];
+    s.allResults=[];
     cb?.({ok:true}); emitState(s);
   });
 
