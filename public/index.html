@@ -156,10 +156,15 @@ button:active{opacity:.7}
           <div class="axis-num">100</div>
         </div>
       </div>
-      <p style="margin:10px 0;font-size:15px;background:#fff8e8;padding:12px;border-radius:10px">
-        🎯 Target: <b id="hcTarget" style="font-size:24px;color:var(--cyan)"></b><br>
-        <span class="sub">숫자를 직접 말하지 말고, 상황·비유로 힌트를 주세요.</span>
-      </p>
+      <div style="margin:10px 0;background:#fff8e8;padding:14px;border-radius:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:14px">🎯 Target</span>
+          <b id="hcTargetVal" style="font-size:28px;color:var(--cyan)"></b>
+        </div>
+        <input id="hcTargetRange" type="range" min="0" max="100" value="50" step="1" style="width:100%;margin:8px 0;accent-color:var(--cyan)">
+        <div class="spectrum-label"><b>0</b><span id="hcLeft2"></span><span id="hcRight2"></span><b>100</b></div>
+        <p class="sub" style="margin:6px 0 0">슬라이더로 Target을 조정할 수 있습니다. 숫자를 직접 말하지 말고, 상황·비유로 힌트를 주세요.</p>
+      </div>
       <textarea id="hostClueInput" placeholder="힌트를 입력하세요" maxlength="140"></textarea>
       <button id="hostSubmitClue" class="primary" style="margin-top:8px">힌트 공개</button>
     </div>
@@ -344,7 +349,10 @@ function applyHost(s){
     $("hcValue").textContent=s.currentRound.value;
     $("hcLeft").textContent=s.currentRound.left;
     $("hcRight").textContent=s.currentRound.right;
-    $("hcTarget").textContent=s.currentRound.target;
+    $("hcLeft2").textContent=s.currentRound.left;
+    $("hcRight2").textContent=s.currentRound.right;
+    $("hcTargetRange").value=s.currentRound.target;
+    $("hcTargetVal").textContent=s.currentRound.target;
   }
   if(s.currentRound&&(s.phase==="voting"||s.phase==="revealed")){
     $("hgroup").textContent=s.currentRound.group;$("hvalue").textContent=s.currentRound.value;
@@ -363,8 +371,9 @@ $("startRound").onclick=()=>socket.emit("hostStartRound",{code,roundId:selectedR
   if(!r?.ok){alert(r?.error||"라운드 시작 실패");return}
   $("hostClueInput").value="";
 });
+$("hcTargetRange").oninput=()=>$("hcTargetVal").textContent=$("hcTargetRange").value;
 $("hostSubmitClue").onclick=()=>{
-  socket.emit("hostSubmitClue",{code,clue:$("hostClueInput").value},res=>{
+  socket.emit("hostSubmitClue",{code,clue:$("hostClueInput").value,target:+$("hcTargetRange").value},res=>{
     if(!res?.ok)alert(res?.error||"힌트 제출 실패");
   });
 };
